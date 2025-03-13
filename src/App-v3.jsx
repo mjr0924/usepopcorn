@@ -2,14 +2,20 @@ import { use, useEffect, useRef, useState } from "react";
 import StarRating from "./StarRating";
 import { useMovies } from "./useMovies";
 import { useLocalStorageState } from "./useLocalStorageState";
-import { useKey } from "./useKey";
 const KEY = "c5a6df0d";
 
 export default function App() {
   const [query, setQuery] = useState("");
   const [selectedId, setSelectedId] = useState(null);
-  const { movies, isLoading, error } = useMovies(query);
-  const [watched, setWatched] = useLocalStorageState([], "watched");
+  // const [watched, setWatched] = useState([]);
+
+  const {movies , isLoading , error} = useMovies(query );
+  const [watched , setWatched] = useLocalStorageState([] , 'watched')
+
+  // const [watched, setWatched] = useState(function () {
+  //   const storeValue = localStorage.getItem("watched");
+  //   return JSON.parse(storeValue);
+  // });
 
   function handleSelectedMovie(id) {
     setSelectedId((selectedId) => (id === selectedId ? null : id));
@@ -25,6 +31,10 @@ export default function App() {
   function handleDeleteWatched(id) {
     setWatched((watched) => watched.filter((movie) => movie.imdbID !== id));
   }
+
+  
+
+  
 
   return (
     <>
@@ -103,11 +113,22 @@ function Logo() {
 
 function Search({ query, setQuery }) {
   const inputEl = useRef(null);
-  useKey("Enter", function () {
-    if (document.activeElement === inputEl.current) return;
-    inputEl.current.focus();
-    setQuery("");
-  });
+
+  useEffect(
+    function () {
+      function callback(e) {
+        if (document.activeElement === inputEl.current) return;
+        if (e.code === "Enter") {
+          inputEl.current.focus();
+          setQuery("");
+        }
+      }
+
+      document.addEventListener("keydown", callback);
+      return () => document.addEventListener("keydown", callback);
+    },
+    [setQuery]
+  );
 
   return (
     <>
@@ -221,12 +242,9 @@ function MovieDetails({ selectedId, onCloseMovie, onAddWatched, watched }) {
   const isWatched = watched.map((movie) => movie.imdbID).includes(selectedId);
 
   const countRef = useRef(0);
-  useEffect(
-    function () {
-      if (userRating) countRef.current++;
-    },
-    [userRating]
-  );
+  useEffect (function(){
+    if(userRating) countRef.current++;
+  },[userRating])
 
   const watchedUserRating = watched.find(
     (movie) => movie.imdbID === selectedId
@@ -254,13 +272,27 @@ function MovieDetails({ selectedId, onCloseMovie, onAddWatched, watched }) {
       imdbRating: Number(imdbRating),
       runtime: Number(runtime.split(" ").at(0)),
       userRating,
-      countRatingDecisions: countRef.current,
+      countRatingDecisions : countRef.current,
     };
     onAddWatched(newWatchedMovie);
     onCloseMovie();
   }
 
-  useKey("Escape", onCloseMovie);
+  useEffect(
+    function () {
+      function callback(e) {
+        if (e.code === "Escape") {
+          onCloseMovie();
+        }
+      }
+      document.addEventListener("keydown", callback);
+
+      return function () {
+        document.removeEventListener("keydown", callback);
+      };
+    },
+    [onCloseMovie]
+  );
 
   useEffect(
     function () {
