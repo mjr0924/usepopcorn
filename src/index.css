@@ -56,7 +56,7 @@ body {
   border-radius: 0.9rem;
   /* overflow: scroll; */
   position: relative;
-  height: max-content;
+  min-height: min-content;
 }
 
 .loader {
